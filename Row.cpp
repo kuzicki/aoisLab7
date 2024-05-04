@@ -1,5 +1,6 @@
 #include "Row.h"
 #include <iostream>
+#include <algorithm>
 
 Row::Row(int offset) : _offset(offset) { }
 
@@ -15,11 +16,26 @@ bool Row::GetIndexed(int index) {
 	return _word[index];
 }
 
-void Row::Print(char end_char) {
+void Row::Set(std::string_view word) {
+	if (word.size() != 16)
+		throw std::exception("invalid argument");
+
 	for (int i = 0; i < 16; i++) {
-		std::cout << _word[i] << end_char;
+		_word[i] = word[i] != '0';
 	}
-	std::cout << '\n';
+}
+
+int Row::GetPos() {
+	return _offset;
+}
+
+void Row::SetWord(std::string_view word) {
+	if (word.size() != 16)
+		throw std::exception("invalid argument");
+
+	for (int i = 0; i < 16; i++) {
+		_word[(i + _offset) % 16] = word[i] != '0';
+	}
 }
 
 std::string Row::ToString() {

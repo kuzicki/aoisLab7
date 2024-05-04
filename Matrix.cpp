@@ -1,15 +1,6 @@
 #include "Matrix.h"
 #include <iostream>
 
-void Matrix::PrintAll() {
-	for (int i = 0; i < 16; i++) {
-		for (int j = 0; j < 16; j++) {
-			std::cout << _matrix[j].GetIndexed(i) << " ";
-		}
-		std::cout << "\n";
-	}
-}
-
 std::string Matrix::ToString() {
 	std::string result;
 	for (int i = 0; i < 16; i++) {
@@ -50,7 +41,7 @@ void Matrix::AddAB(std::string_view condition) {
 	if (condSize != 3)
 		throw std::exception("The condition is not of size 3!");
 
-	for (int i = 0; i < condSize; i++) {
+	for (int i = 0; i < _matrix.size(); i++) {
 		bool isValid = true;
 		for (int j = 0; j < condSize; j++) {
 			bool condValue = condition[j] == '1' ? true : false;
@@ -60,37 +51,65 @@ void Matrix::AddAB(std::string_view condition) {
 			}
 		}
 		if (isValid) {
-			applyAddAB(i);
+			_applyAddAB(i);
 		}
 	}
 }
 
-std::vector<Row> Matrix::FindLess(std::string_view argument) {
+int Matrix::FindLess(std::string_view argument) {
 	if (argument.size() != 16)
 		throw std::exception("The argument length have to be exactly 16!");
 
-	std::vector<Row> result;
+	std::vector<Row> found;
 	for (int i = 0; i < 16; i++) {
 		auto [g, l] = _calculateGL(argument, i);
 		if (g == false && l == true) {
-			result.push_back(_matrix[i]);
+			found.push_back(_matrix[i]);
 		}
+	}
+	if (!found.size())
+		return -1;
+	int max = 0;
+	for (int i = 1; i < found.size(); i++) {
+		std::string new_argument = _formArgument(found[max]);
+		auto [g, l] = _calculateGL(argument, found[i].GetPos());
+		if (g == false && l == true) {
+			max = i;
+		}
+	}
+	return found[max].GetPos();
+}
+
+std::string Matrix::_formArgument(const Row& row) {
+	std::string result = "";
+	for (int i = 0; i < 16; i++) {
+		result += row[i] ? "1" : "0";
 	}
 	return result;
 }
 
-std::vector<Row> Matrix::FindMore(std::string_view argument) {
+int Matrix::FindMore(std::string_view argument) {
 	if (argument.size() != 16)
 		throw std::exception("The argument length have to be exactly 16!");
 
-	std::vector<Row> result;
+	std::vector<Row> found;
 	for (int i = 0; i < 16; i++) {
 		auto [g, l] = _calculateGL(argument, i);
 		if (g == true && l == false) {
-			result.push_back(_matrix[i]);
+			found.push_back(_matrix[i]);
 		}
 	}
-	return result;
+	if (!found.size())
+		return -1;
+	int min = 0;
+	for (int i = 1; i < found.size(); i++) {
+		std::string new_argument = _formArgument(found[min]);
+		auto [g, l] = _calculateGL(argument, found[i].GetPos());
+		if (g == true && l == false) {
+			min = i;
+		}
+	}
+	return found[min].GetPos();
 }
 
 Row& Matrix::operator[](int index) {
@@ -109,13 +128,13 @@ Matrix::_calculateGL(std::string_view argument, int wordIndex) {
 	return std::make_pair(g[0], l[0]);
 }
 
-void Matrix::applyAddAB(int index) {
+void Matrix::_applyAddAB(int index) {
 	bool carry = false;
 	int result = 0;
 	for (int i = 3; i >= 0; i--) {
 		result = _matrix[index][i + 3] + _matrix[index][i + 7] + carry;
-		carry = result % 2;
-		_matrix[index][i + 11] = result / 2;
+		_matrix[index][i + 12] = result % 2;
+		carry = result / 2;
 	}
-	_matrix[index][15] = carry;
+	_matrix[index][11] = carry;
 }
